@@ -1,0 +1,2257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ShiftFlow — Enterprise Roster Management</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg: #f0f2f7;
+    --surface: #ffffff;
+    --surface2: #f7f8fc;
+    --border: #e2e6f0;
+    --border2: #cdd2e0;
+    --text: #1a1d2e;
+    --text2: #5a607a;
+    --text3: #8a90a8;
+    --accent: #3b5bdb;
+    --accent-light: #eef1ff;
+    --accent2: #7c3aed;
+
+    --shift-M: #22c55e;
+    --shift-M-bg: #dcfce7;
+    --shift-M-text: #15803d;
+    --shift-A: #f59e0b;
+    --shift-A-bg: #fef3c7;
+    --shift-A-text: #b45309;
+    --shift-N: #3b82f6;
+    --shift-N-bg: #dbeafe;
+    --shift-N-text: #1d4ed8;
+    --shift-G: #10b981;
+    --shift-G-bg: #d1fae5;
+    --shift-G-text: #065f46;
+    --shift-WO: #94a3b8;
+    --shift-WO-bg: #f1f5f9;
+    --shift-WO-text: #475569;
+    --shift-CL: #ef4444;
+    --shift-CL-bg: #fee2e2;
+    --shift-CL-text: #b91c1c;
+    --shift-SL: #f97316;
+    --shift-SL-bg: #ffedd5;
+    --shift-SL-text: #c2410c;
+    --shift-PL: #ec4899;
+    --shift-PL-bg: #fce7f3;
+    --shift-PL-text: #9d174d;
+    --shift-H: #8b5cf6;
+    --shift-H-bg: #ede9fe;
+    --shift-H-text: #5b21b6;
+
+    --radius: 10px;
+    --radius-sm: 6px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.05);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.1);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  /* ── TOP NAV ── */
+  .topnav {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 1px 0 var(--border);
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 18px;
+    color: var(--text);
+    letter-spacing: -0.4px;
+  }
+  .brand-icon {
+    width: 34px; height: 34px;
+    background: var(--accent);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 16px;
+  }
+  .brand span { color: var(--accent); }
+  .nav-actions { display: flex; gap: 8px; align-items: center; }
+
+  /* ── LAYOUT ── */
+  .layout { display: flex; min-height: calc(100vh - 60px); }
+  .sidebar {
+    width: 260px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 20px 0;
+    flex-shrink: 0;
+    position: sticky;
+    top: 60px;
+    height: calc(100vh - 60px);
+    overflow-y: auto;
+  }
+  .sidebar-section { padding: 0 16px 16px; }
+  .sidebar-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text3);
+    padding: 8px 8px 6px;
+    display: block;
+  }
+  .sidebar-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 9px 12px;
+    border-radius: var(--radius-sm);
+    border: none;
+    background: transparent;
+    color: var(--text2);
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+  }
+  .sidebar-btn:hover { background: var(--accent-light); color: var(--accent); }
+  .sidebar-btn.active { background: var(--accent-light); color: var(--accent); font-weight: 600; }
+  .sidebar-btn .icon { font-size: 15px; width: 20px; text-align: center; }
+  .sidebar-divider { border: none; border-top: 1px solid var(--border); margin: 8px 16px; }
+
+  .main { flex: 1; overflow: hidden; padding: 24px; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow);
+  }
+  .card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .card-title {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-body { padding: 20px; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: var(--radius-sm);
+    border: none;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #2f4ac7; }
+  .btn-secondary { background: var(--surface); color: var(--text2); border: 1px solid var(--border2); }
+  .btn-secondary:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: #fee2e2; color: #b91c1c; }
+  .btn-danger:hover { background: #fecaca; }
+  .btn-success { background: #dcfce7; color: #15803d; }
+  .btn-success:hover { background: #bbf7d0; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-icon { padding: 7px; width: 32px; height: 32px; justify-content: center; }
+
+  /* ── FORM ── */
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+  .form-group { display: flex; flex-direction: column; gap: 5px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--text2); }
+  .form-control {
+    padding: 8px 12px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--surface);
+    transition: border-color 0.15s;
+    outline: none;
+  }
+  .form-control:focus { border-color: var(--accent); }
+  .form-control.error { border-color: #ef4444; }
+  .error-msg { font-size: 11px; color: #ef4444; margin-top: 2px; }
+
+  /* ── TABS ── */
+  .tabs { display: flex; border-bottom: 2px solid var(--border); gap: 0; }
+  .tab-btn {
+    padding: 12px 20px;
+    background: none;
+    border: none;
+    font-family: inherit;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text3);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.15s;
+  }
+  .tab-btn:hover { color: var(--text2); }
+  .tab-btn.active { color: var(--accent); font-weight: 700; border-bottom-color: var(--accent); }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── TABLE ── */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  thead th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text3);
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tbody tr { border-bottom: 1px solid var(--border); transition: background 0.1s; }
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: var(--surface2); }
+  td { padding: 10px 14px; color: var(--text2); vertical-align: middle; }
+  .td-name { font-weight: 600; color: var(--text); }
+
+  /* ── AVATAR ── */
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+    color: white;
+    flex-shrink: 0;
+  }
+  .employee-cell { display: flex; align-items: center; gap: 10px; }
+
+  /* ── SEARCH ── */
+  .search-wrap { position: relative; }
+  .search-wrap input { padding-left: 34px; }
+  .search-icon { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text3); font-size: 14px; pointer-events: none; }
+
+  /* ── BADGE ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  /* ── STATS ROW ── */
+  .stats-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .stat-value { font-size: 24px; font-weight: 700; color: var(--text); font-family: 'DM Mono', monospace; }
+  .stat-label { font-size: 11px; color: var(--text3); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+  /* ── ROSTER GRID ── */
+  #roster-section { display: none; }
+  .roster-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface2);
+  }
+  .roster-outer {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-height: calc(100vh - 200px);
+    position: relative;
+  }
+  .roster-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 12px;
+    font-family: 'DM Mono', monospace;
+    min-width: 100%;
+  }
+  .roster-table th, .roster-table td {
+    border-right: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    padding: 0;
+  }
+  .roster-table th { background: var(--surface2); }
+
+  /* Sticky columns */
+  .col-sticky {
+    position: sticky;
+    left: 0;
+    z-index: 4;
+    background: var(--surface);
+    min-width: 180px;
+    max-width: 180px;
+    border-right: 2px solid var(--border2) !important;
+  }
+  .col-sticky-2 {
+    position: sticky;
+    left: 180px;
+    z-index: 4;
+    background: var(--surface);
+    min-width: 60px;
+    max-width: 60px;
+    text-align: center;
+    border-right: 1px solid var(--border) !important;
+  }
+  .roster-table thead th.col-sticky { z-index: 6; background: var(--surface2); }
+  .roster-table thead th.col-sticky-2 { z-index: 6; background: var(--surface2); }
+
+  .roster-table thead tr:first-child th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .roster-table thead tr:last-child th {
+    position: sticky;
+    top: 40px;
+    z-index: 5;
+  }
+
+  .day-header {
+    min-width: 44px;
+    max-width: 44px;
+    text-align: center;
+    padding: 6px 2px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+  }
+  .day-header.weekend { background: #faf5ff; color: var(--accent2); }
+  .day-header.today { background: var(--accent-light); color: var(--accent); }
+  .day-sub { font-size: 9px; font-weight: 500; color: var(--text3); }
+
+  .emp-name-cell {
+    padding: 6px 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .emp-dept-cell {
+    padding: 2px 10px 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    color: var(--text3);
+  }
+  .emp-id-cell {
+    padding: 6px 4px;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text3);
+  }
+
+  /* Shift cells */
+  .shift-cell {
+    min-width: 44px;
+    max-width: 44px;
+    height: 48px;
+    text-align: center;
+    vertical-align: middle;
+    cursor: pointer;
+    transition: opacity 0.1s;
+    user-select: none;
+    position: relative;
+  }
+  .shift-cell:hover { opacity: 0.8; }
+  .shift-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 28px;
+    border-radius: 5px;
+    font-size: 10px;
+    font-weight: 700;
+    font-family: 'DM Mono', monospace;
+  }
+  .shift-M { background: var(--shift-M-bg); color: var(--shift-M-text); }
+  .shift-A { background: var(--shift-A-bg); color: var(--shift-A-text); }
+  .shift-N { background: var(--shift-N-bg); color: var(--shift-N-text); }
+  .shift-G { background: var(--shift-G-bg); color: var(--shift-G-text); }
+  .shift-WO { background: var(--shift-WO-bg); color: var(--shift-WO-text); }
+  .shift-CL { background: var(--shift-CL-bg); color: var(--shift-CL-text); }
+  .shift-SL { background: var(--shift-SL-bg); color: var(--shift-SL-text); }
+  .shift-PL { background: var(--shift-PL-bg); color: var(--shift-PL-text); }
+  .shift-H { background: var(--shift-H-bg); color: var(--shift-H-text); }
+  .shift-empty { background: transparent; }
+
+  /* Summary rows */
+  .summary-row td {
+    padding: 4px 2px;
+    text-align: center;
+    font-size: 10px;
+    font-weight: 600;
+    background: var(--surface2);
+  }
+  .summary-header td { font-size: 10px; color: var(--text3); font-weight: 700; background: #f0f2f7; }
+
+  /* Total column */
+  .col-total {
+    min-width: 44px;
+    max-width: 44px;
+    text-align: center;
+    background: var(--accent-light);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 11px;
+  }
+
+  /* Right-side totals sticky */
+  .col-totals-sticky {
+    position: sticky;
+    right: 0;
+    z-index: 4;
+    background: var(--accent-light);
+    border-left: 2px solid var(--border2) !important;
+    min-width: 44px;
+  }
+  thead th.col-totals-sticky { z-index: 6; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    z-index: 2000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+  .modal-overlay.open { display: flex; animation: fadeIn 0.15s; }
+  @keyframes fadeIn { from { opacity: 0; } }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-lg);
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.2s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } }
+  .modal-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .modal-title { font-weight: 700; font-size: 16px; }
+  .modal-body { padding: 20px 24px; }
+  .modal-footer {
+    padding: 16px 24px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+  }
+
+  /* ── SHIFT PICKER ── */
+  .shift-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-top: 12px;
+  }
+  .shift-option {
+    padding: 10px 8px;
+    border-radius: var(--radius-sm);
+    border: 2px solid transparent;
+    cursor: pointer;
+    text-align: center;
+    font-weight: 700;
+    font-size: 13px;
+    transition: all 0.15s;
+    font-family: 'DM Mono', monospace;
+  }
+  .shift-option:hover, .shift-option.selected { border-color: var(--accent); transform: scale(1.03); }
+
+  /* ── TOAST ── */
+  #toast-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+  }
+  .toast {
+    background: var(--text);
+    color: white;
+    padding: 12px 18px;
+    border-radius: var(--radius);
+    font-size: 13px;
+    font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    animation: toastIn 0.25s ease;
+    pointer-events: all;
+    min-width: 240px;
+  }
+  @keyframes toastIn { from { transform: translateX(50px); opacity: 0; } }
+  .toast.success { background: #15803d; }
+  .toast.error { background: #b91c1c; }
+  .toast.warning { background: #b45309; }
+  .toast.info { background: var(--accent); }
+
+  /* ── LEGEND ── */
+  .legend { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px 20px; background: var(--surface2); border-top: 1px solid var(--border); }
+  .legend-item { display: flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text2); }
+  .legend-dot { width: 20px; height: 16px; border-radius: 3px; font-size: 9px; font-weight: 700; display: flex; align-items: center; justify-content: center; font-family: 'DM Mono', monospace; }
+
+  /* ── MISC ── */
+  .page { display: none; }
+  .page.active { display: block; }
+  .section-title { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 4px; }
+  .section-sub { font-size: 13px; color: var(--text3); margin-bottom: 20px; }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text3); }
+  .empty-state .big-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-state p { font-size: 14px; }
+  .flex-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .mt-16 { margin-top: 16px; }
+  .mt-12 { margin-top: 12px; }
+  .mb-16 { margin-bottom: 16px; }
+  .full-width { width: 100%; }
+  select.form-control option { font-family: 'DM Sans', sans-serif; }
+  .text-center { text-align: center; }
+  .font-mono { font-family: 'DM Mono', monospace; }
+
+  .context-menu {
+    position: fixed;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    z-index: 5000;
+    min-width: 180px;
+    overflow: hidden;
+  }
+  .context-menu button {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 14px;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 13px;
+    color: var(--text2);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.1s;
+  }
+  .context-menu button:hover { background: var(--accent-light); color: var(--accent); }
+  .context-menu hr { border: none; border-top: 1px solid var(--border); margin: 3px 0; }
+
+  /* Summary table */
+  .summary-table-wrap { overflow-x: auto; }
+  .summary-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .summary-table th {
+    background: var(--surface2);
+    padding: 8px 12px;
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text3);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+    text-transform: uppercase;
+  }
+  .summary-table th:first-child { text-align: left; min-width: 160px; }
+  .summary-table td { padding: 7px 12px; border: 1px solid var(--border); text-align: center; color: var(--text2); }
+  .summary-table td:first-child { text-align: left; font-weight: 600; color: var(--text); }
+  .summary-table tbody tr:hover { background: var(--surface2); }
+  .summary-table tfoot td { background: var(--accent-light); color: var(--accent); font-weight: 700; }
+
+  @media (max-width: 768px) {
+    .sidebar { display: none; }
+    .main { padding: 16px; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* Loading overlay */
+  .loading {
+    position: fixed; inset: 0;
+    background: rgba(255,255,255,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9998;
+    display: none;
+  }
+  .spinner {
+    width: 36px; height: 36px;
+    border: 3px solid var(--border);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .highlight-cell { background: #fef9c3 !important; }
+  .selected-cell { outline: 2px solid var(--accent) !important; outline-offset: -2px; }
+</style>
+</head>
+<body>
+
+<!-- ── TOP NAV ── -->
+<nav class="topnav">
+  <div class="brand">
+    <div class="brand-icon">⚡</div>
+    Shift<span>Flow</span>
+  </div>
+  <div class="nav-actions">
+    <button class="btn btn-secondary btn-sm" onclick="exportExcel()">📥 Export Excel</button>
+    <button class="btn btn-secondary btn-sm" onclick="document.getElementById('importFile').click()">📤 Import Excel</button>
+    <input type="file" id="importFile" accept=".xlsx,.xls" style="display:none" onchange="importExcel(event)">
+    <button class="btn btn-danger btn-sm" onclick="confirmClearAll()">🗑 Clear All</button>
+  </div>
+</nav>
+
+<div class="layout">
+  <!-- ── SIDEBAR ── -->
+  <aside class="sidebar">
+    <div class="sidebar-section">
+      <span class="sidebar-label">Navigation</span>
+      <button class="sidebar-btn active" onclick="showPage('dashboard')" id="nav-dashboard">
+        <span class="icon">📊</span> Dashboard
+      </button>
+      <button class="sidebar-btn" onclick="showPage('employees')" id="nav-employees">
+        <span class="icon">👥</span> Employees
+      </button>
+      <button class="sidebar-btn" onclick="showPage('roster')" id="nav-roster">
+        <span class="icon">📅</span> Roster Grid
+      </button>
+      <button class="sidebar-btn" onclick="showPage('summary')" id="nav-summary">
+        <span class="icon">📈</span> Summary Reports
+      </button>
+    </div>
+    <hr class="sidebar-divider">
+    <div class="sidebar-section">
+      <span class="sidebar-label">Smart Tools</span>
+      <button class="sidebar-btn" onclick="openAutoAssign()">
+        <span class="icon">🤖</span> Auto Assign Shifts
+      </button>
+      <button class="sidebar-btn" onclick="openBulkAssign()">
+        <span class="icon">⚡</span> Bulk Assign
+      </button>
+      <button class="sidebar-btn" onclick="openCopyShifts()">
+        <span class="icon">📋</span> Copy Shifts
+      </button>
+      <button class="sidebar-btn" onclick="openBulkLeave()">
+        <span class="icon">🏖</span> Bulk Leave
+      </button>
+    </div>
+    <hr class="sidebar-divider">
+    <div class="sidebar-section">
+      <span class="sidebar-label">Roster Period</span>
+      <div class="form-group mt-12">
+        <label class="form-label">Month</label>
+        <select class="form-control" id="globalMonth" onchange="onPeriodChange()"></select>
+      </div>
+      <div class="form-group mt-12">
+        <label class="form-label">Year</label>
+        <select class="form-control" id="globalYear" onchange="onPeriodChange()"></select>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── MAIN CONTENT ── -->
+  <main class="main">
+
+    <!-- DASHBOARD PAGE -->
+    <div class="page active" id="page-dashboard">
+      <div class="section-title">Dashboard</div>
+      <div class="section-sub" id="dash-period-label">Overview of current roster period</div>
+
+      <div class="stats-row" id="dashStats">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-emp">0</div>
+          <div class="stat-label">Employees</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-morning">0</div>
+          <div class="stat-label">Morning Shifts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-afternoon">0</div>
+          <div class="stat-label">Afternoon Shifts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-night">0</div>
+          <div class="stat-label">Night Shifts</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-leaves">0</div>
+          <div class="stat-label">Total Leaves</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-wo">0</div>
+          <div class="stat-label">Week Offs</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">📅 Daily Staffing Overview</span>
+          <span style="font-size:12px;color:var(--text3)">Shifts per day this month</span>
+        </div>
+        <div style="overflow-x:auto; padding: 16px 20px;">
+          <table class="summary-table" id="dailyOverviewTable">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- EMPLOYEES PAGE -->
+    <div class="page" id="page-employees">
+      <div class="section-title">Employee Management</div>
+      <div class="section-sub">Add, edit, and manage your workforce</div>
+
+      <div class="card mb-16">
+        <div class="card-header">
+          <span class="card-title" id="empFormTitle">➕ Add New Employee</span>
+          <button class="btn btn-secondary btn-sm" onclick="cancelEdit()" id="cancelEditBtn" style="display:none">✕ Cancel Edit</button>
+        </div>
+        <div class="card-body">
+          <div class="form-grid">
+            <div class="form-group">
+              <label class="form-label">Employee ID *</label>
+              <input class="form-control" id="empId" placeholder="EMP001">
+              <span class="error-msg" id="errId"></span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Full Name *</label>
+              <input class="form-control" id="empName" placeholder="John Doe">
+              <span class="error-msg" id="errName"></span>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Role / Designation *</label>
+              <input class="form-control" id="empRole" placeholder="Software Engineer">
+            </div>
+            <div class="form-group">
+              <label class="form-label">Department *</label>
+              <input class="form-control" id="empDept" placeholder="Engineering">
+            </div>
+          </div>
+          <div class="mt-16 flex-row">
+            <button class="btn btn-primary" onclick="saveEmployee()">💾 Save Employee</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">👥 All Employees (<span id="empCount">0</span>)</span>
+          <div class="search-wrap">
+            <span class="search-icon">🔍</span>
+            <input class="form-control" id="empSearch" placeholder="Search employees..." oninput="renderEmployeeTable()" style="width:220px;">
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="empTable">
+            <thead>
+              <tr>
+                <th>Employee</th>
+                <th>Employee ID</th>
+                <th>Role</th>
+                <th>Department</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="empTbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROSTER PAGE -->
+    <div class="page" id="page-roster">
+      <div class="section-title">Roster Grid</div>
+      <div class="section-sub" id="roster-period-label">Click any cell to assign a shift</div>
+      <div class="card" style="overflow:hidden;">
+        <div class="roster-controls">
+          <button class="btn btn-secondary btn-sm" onclick="openAutoAssign()">🤖 Auto Assign</button>
+          <button class="btn btn-secondary btn-sm" onclick="openBulkAssign()">⚡ Bulk Assign</button>
+          <button class="btn btn-secondary btn-sm" onclick="openCopyShifts()">📋 Copy Employee</button>
+          <button class="btn btn-secondary btn-sm" onclick="copyPrevWeek()">🔁 Copy Prev Week</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmClearRoster()">🗑 Clear Roster</button>
+          <button class="btn btn-success btn-sm" onclick="exportExcel()">📥 Export</button>
+        </div>
+        <div class="roster-outer" id="rosterOuter">
+          <div id="rosterGridWrap"></div>
+        </div>
+        <div class="legend" id="shiftLegend"></div>
+      </div>
+    </div>
+
+    <!-- SUMMARY PAGE -->
+    <div class="page" id="page-summary">
+      <div class="section-title">Summary Reports</div>
+      <div class="section-sub">Monthly analytics and staffing insights</div>
+
+      <div class="tabs mb-16" style="background:var(--surface);border-radius:var(--radius) var(--radius) 0 0; padding: 0 20px;">
+        <button class="tab-btn active" onclick="switchSummaryTab('employee')">👤 Employee Summary</button>
+        <button class="tab-btn" onclick="switchSummaryTab('daily')">📅 Daily Summary</button>
+      </div>
+
+      <div class="tab-content active" id="summary-employee">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📊 Monthly Employee Summary</span>
+            <button class="btn btn-secondary btn-sm" onclick="exportSummary('employee')">📥 Export</button>
+          </div>
+          <div class="summary-table-wrap" style="padding:16px 20px;">
+            <table class="summary-table" id="empSummaryTable">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>ID</th>
+                  <th title="Morning">M</th>
+                  <th title="Afternoon">A</th>
+                  <th title="Night">N</th>
+                  <th title="General">G</th>
+                  <th title="Week Off">WO</th>
+                  <th title="Casual Leave">CL</th>
+                  <th title="Sick Leave">SL</th>
+                  <th title="Privilege Leave">PL</th>
+                  <th title="Holiday">H</th>
+                  <th>Total Leaves</th>
+                  <th>Working Days</th>
+                </tr>
+              </thead>
+              <tbody id="empSummaryBody"></tbody>
+              <tfoot id="empSummaryFoot"></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-content" id="summary-daily">
+        <div class="card">
+          <div class="card-header">
+            <span class="card-title">📅 Daily Staffing Summary</span>
+            <button class="btn btn-secondary btn-sm" onclick="exportSummary('daily')">📥 Export</button>
+          </div>
+          <div class="summary-table-wrap" style="padding:16px 20px;">
+            <table class="summary-table" id="dailySummaryTable">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Day</th>
+                  <th>Morning</th>
+                  <th>Afternoon</th>
+                  <th>Night</th>
+                  <th>General</th>
+                  <th>Week Off</th>
+                  <th>Leaves</th>
+                  <th>Holiday</th>
+                  <th>Total Assigned</th>
+                </tr>
+              </thead>
+              <tbody id="dailySummaryBody"></tbody>
+              <tfoot id="dailySummaryFoot"></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── SHIFT PICKER MODAL ── -->
+<div class="modal-overlay" id="shiftPickerModal">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-header">
+      <span class="modal-title">Assign Shift</span>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('shiftPickerModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="shiftPickerInfo" style="font-size:13px;color:var(--text2);margin-bottom:8px;"></div>
+      <div class="shift-picker-grid" id="shiftPickerGrid"></div>
+      <div class="flex-row mt-16">
+        <button class="btn btn-danger btn-sm" onclick="clearSelectedCell()">🗑 Clear Cell</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── AUTO ASSIGN MODAL ── -->
+<div class="modal-overlay" id="autoAssignModal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <span class="modal-title">🤖 Auto Assign Shifts</span>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('autoAssignModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group mb-16">
+        <label class="form-label">Select Employees</label>
+        <select class="form-control" id="autoEmpSelect" multiple style="height:120px;">
+        </select>
+        <span style="font-size:11px;color:var(--text3)">Hold Ctrl/Cmd to select multiple. Leave empty for all employees.</span>
+      </div>
+      <div class="form-group mb-16">
+        <label class="form-label">Default Weekday Shift</label>
+        <select class="form-control" id="autoDefaultShift">
+          <option value="M">Morning (M)</option>
+          <option value="A">Afternoon (A)</option>
+          <option value="N">Night (N)</option>
+          <option value="G" selected>General (G)</option>
+        </select>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="autoSunOff" checked> Mark Sundays as Week Off (WO)
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="autoSat2Off"> Mark 2nd Saturday as Week Off
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="autoSat4Off"> Mark 4th Saturday as Week Off
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="autoOverwrite"> Overwrite existing shifts
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('autoAssignModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="runAutoAssign()">▶ Run Auto Assign</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── BULK ASSIGN MODAL ── -->
+<div class="modal-overlay" id="bulkAssignModal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <span class="modal-title">⚡ Bulk Assign Shifts</span>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('bulkAssignModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="form-group">
+          <label class="form-label">From Date</label>
+          <input type="number" class="form-control" id="bulkFrom" min="1" max="31" placeholder="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">To Date</label>
+          <input type="number" class="form-control" id="bulkTo" min="1" max="31" placeholder="31">
+        </div>
+      </div>
+      <div class="form-group mt-12">
+        <label class="form-label">Shift Type</label>
+        <select class="form-control" id="bulkShift">
+          <option value="M">Morning (M)</option>
+          <option value="A">Afternoon (A)</option>
+          <option value="N">Night (N)</option>
+          <option value="G">General (G)</option>
+          <option value="WO">Week Off (WO)</option>
+          <option value="H">Holiday (H)</option>
+        </select>
+      </div>
+      <div class="form-group mt-12">
+        <label class="form-label">Apply To</label>
+        <select class="form-control" id="bulkEmpSelect">
+          <option value="all">All Employees</option>
+        </select>
+      </div>
+      <div class="form-group mt-12">
+        <label class="form-label">Days of Week (leave empty for all)</label>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px;" id="bulkDaysCheck">
+          <label style="font-size:12px;display:flex;gap:4px;align-items:center;"><input type="checkbox" value="0"> Sun</label>
+          <label style="font-size:12px;display:flex;gap:4px;align-items:center;"><input type="checkbox" value="1"> Mon</label>
+          <label style="font-size:12px;display:flex;gap:4px;align-items:center;"><input type="checkbox" value="2"> Tue</label>
+          <label style="font-size:12px;display:flex;gap:4px;align-items:center;"><input type="checkbox" value="3"> Wed</label>
+          <label style="font-size:12px;display:flex;gap:4px;align-items:center;"><input type="checkbox" value="4"> Thu</label>
+          <label style="font-size:12px;display:flex;gap:4px;align-items:center;"><input type="checkbox" value="5"> Fri</label>
+          <label style="font-size:12px;display:flex;gap:4px;align-items:center;"><input type="checkbox" value="6"> Sat</label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('bulkAssignModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="runBulkAssign()">⚡ Apply</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── COPY SHIFTS MODAL ── -->
+<div class="modal-overlay" id="copyShiftsModal">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <span class="modal-title">📋 Copy Employee Shifts</span>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('copyShiftsModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Copy From Employee</label>
+        <select class="form-control" id="copyFromEmp"></select>
+      </div>
+      <div class="form-group mt-12">
+        <label class="form-label">Copy To Employee</label>
+        <select class="form-control" id="copyToEmp"></select>
+      </div>
+      <div class="form-group mt-12">
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+          <input type="checkbox" id="copyOverwrite" checked> Overwrite existing shifts
+        </label>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('copyShiftsModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="runCopyShifts()">📋 Copy</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── BULK LEAVE MODAL ── -->
+<div class="modal-overlay" id="bulkLeaveModal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modal-header">
+      <span class="modal-title">🏖 Bulk Assign Leaves</span>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('bulkLeaveModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+        <div class="form-group">
+          <label class="form-label">From Date</label>
+          <input type="number" class="form-control" id="leaveFrom" min="1" max="31" placeholder="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">To Date</label>
+          <input type="number" class="form-control" id="leaveTo" min="1" max="31" placeholder="5">
+        </div>
+      </div>
+      <div class="form-group mt-12">
+        <label class="form-label">Leave Type</label>
+        <select class="form-control" id="leaveType">
+          <option value="CL">Casual Leave (CL)</option>
+          <option value="SL">Sick Leave (SL)</option>
+          <option value="PL">Privilege Leave (PL)</option>
+          <option value="H">Holiday (H)</option>
+        </select>
+      </div>
+      <div class="form-group mt-12">
+        <label class="form-label">Apply To</label>
+        <select class="form-control" id="leaveEmpSelect">
+          <option value="all">All Employees</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('bulkLeaveModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="runBulkLeave()">🏖 Apply Leave</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── CONFIRM MODAL ── -->
+<div class="modal-overlay" id="confirmModal">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-header">
+      <span class="modal-title" id="confirmTitle">Confirm Action</span>
+    </div>
+    <div class="modal-body">
+      <p id="confirmMsg" style="color:var(--text2);font-size:14px;"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('confirmModal')">Cancel</button>
+      <button class="btn btn-danger" id="confirmOkBtn">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── TOAST CONTAINER ── -->
+<div id="toast-container"></div>
+
+<!-- ── LOADING ── -->
+<div class="loading" id="loadingOverlay"><div class="spinner"></div></div>
+
+<!-- ── CONTEXT MENU ── -->
+<div class="context-menu" id="contextMenu" style="display:none;"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// CONSTANTS & CONFIG
+// ═══════════════════════════════════════════════════════
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS_SHORT = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+const SHIFTS = {
+  M:  { label: 'Morning',   code: 'M',  color: '#22c55e', bg: '#dcfce7', text: '#15803d' },
+  A:  { label: 'Afternoon', code: 'A',  color: '#f59e0b', bg: '#fef3c7', text: '#b45309' },
+  N:  { label: 'Night',     code: 'N',  color: '#3b82f6', bg: '#dbeafe', text: '#1d4ed8' },
+  G:  { label: 'General',   code: 'G',  color: '#10b981', bg: '#d1fae5', text: '#065f46' },
+  WO: { label: 'Week Off',  code: 'WO', color: '#94a3b8', bg: '#f1f5f9', text: '#475569' },
+  CL: { label: 'Casual Leave', code: 'CL', color: '#ef4444', bg: '#fee2e2', text: '#b91c1c' },
+  SL: { label: 'Sick Leave',   code: 'SL', color: '#f97316', bg: '#ffedd5', text: '#c2410c' },
+  PL: { label: 'Privilege Leave', code: 'PL', color: '#ec4899', bg: '#fce7f3', text: '#9d174d' },
+  H:  { label: 'Holiday',   code: 'H',  color: '#8b5cf6', bg: '#ede9fe', text: '#5b21b6' }
+};
+
+const LEAVE_TYPES = ['CL','SL','PL','H'];
+const WORK_SHIFTS = ['M','A','N','G'];
+
+const AVATAR_COLORS = ['#3b5bdb','#7c3aed','#0ea5e9','#10b981','#f59e0b','#ef4444','#ec4899','#14b8a6','#f97316','#6366f1'];
+
+// ── STATE ──
+let state = {
+  employees: [],
+  roster: {}, // key: `${empId}_${year}_${month}_${day}` => shiftCode
+  currentMonth: new Date().getMonth(),
+  currentYear: new Date().getFullYear(),
+};
+
+let editingEmpId = null;
+let pickerCell = null; // {empId, day}
+
+// ═══════════════════════════════════════════════════════
+// LOCAL STORAGE
+// ═══════════════════════════════════════════════════════
+function saveState() {
+  localStorage.setItem('shiftflow_employees', JSON.stringify(state.employees));
+  localStorage.setItem('shiftflow_roster', JSON.stringify(state.roster));
+  localStorage.setItem('shiftflow_period', JSON.stringify({ month: state.currentMonth, year: state.currentYear }));
+}
+
+function loadState() {
+  try {
+    const emps = localStorage.getItem('shiftflow_employees');
+    const roster = localStorage.getItem('shiftflow_roster');
+    const period = localStorage.getItem('shiftflow_period');
+    if (emps) state.employees = JSON.parse(emps);
+    if (roster) state.roster = JSON.parse(roster);
+    if (period) {
+      const p = JSON.parse(period);
+      state.currentMonth = p.month;
+      state.currentYear = p.year;
+    }
+  } catch(e) { console.error('Load state error', e); }
+}
+
+// ═══════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.sidebar-btn[id^="nav-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const navBtn = document.getElementById('nav-' + name);
+  if (navBtn) navBtn.classList.add('active');
+  if (name === 'roster') renderRosterGrid();
+  if (name === 'dashboard') renderDashboard();
+  if (name === 'summary') renderSummary();
+}
+
+// ═══════════════════════════════════════════════════════
+// PERIOD INIT
+// ═══════════════════════════════════════════════════════
+function initPeriodSelectors() {
+  const monthSel = document.getElementById('globalMonth');
+  const yearSel = document.getElementById('globalYear');
+  monthSel.innerHTML = MONTHS.map((m,i) => `<option value="${i}" ${i === state.currentMonth ? 'selected' : ''}>${m}</option>`).join('');
+  const thisYear = new Date().getFullYear();
+  yearSel.innerHTML = '';
+  for (let y = thisYear - 3; y <= thisYear + 3; y++) {
+    yearSel.innerHTML += `<option value="${y}" ${y === state.currentYear ? 'selected' : ''}>${y}</option>`;
+  }
+}
+
+function onPeriodChange() {
+  state.currentMonth = parseInt(document.getElementById('globalMonth').value);
+  state.currentYear = parseInt(document.getElementById('globalYear').value);
+  saveState();
+  // Refresh current page
+  const activePage = document.querySelector('.page.active');
+  if (activePage) {
+    const name = activePage.id.replace('page-','');
+    if (name === 'roster') renderRosterGrid();
+    if (name === 'dashboard') renderDashboard();
+    if (name === 'summary') renderSummary();
+  }
+  updatePeriodLabels();
+}
+
+function updatePeriodLabels() {
+  const label = `${MONTHS[state.currentMonth]} ${state.currentYear}`;
+  const el1 = document.getElementById('dash-period-label');
+  const el2 = document.getElementById('roster-period-label');
+  if (el1) el1.textContent = `Overview for ${label}`;
+  if (el2) el2.textContent = `${label} — Click any cell to assign a shift`;
+}
+
+function getDaysInMonth(year, month) {
+  return new Date(year, month + 1, 0).getDate();
+}
+
+function getRosterKey(empId, day) {
+  return `${empId}_${state.currentYear}_${state.currentMonth}_${day}`;
+}
+
+function getShift(empId, day) {
+  return state.roster[getRosterKey(empId, day)] || '';
+}
+
+function setShift(empId, day, code) {
+  if (code) {
+    state.roster[getRosterKey(empId, day)] = code;
+  } else {
+    delete state.roster[getRosterKey(empId, day)];
+  }
+  saveState();
+}
+
+// ═══════════════════════════════════════════════════════
+// EMPLOYEE MANAGEMENT
+// ═══════════════════════════════════════════════════════
+function getAvatarColor(name) {
+  let hash = 0;
+  for (let c of name) hash = ((hash << 5) - hash) + c.charCodeAt(0);
+  return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length];
+}
+
+function getInitials(name) {
+  return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0,2);
+}
+
+function saveEmployee() {
+  const id = document.getElementById('empId').value.trim();
+  const name = document.getElementById('empName').value.trim();
+  const role = document.getElementById('empRole').value.trim();
+  const dept = document.getElementById('empDept').value.trim();
+
+  // Reset errors
+  ['errId','errName'].forEach(e => document.getElementById(e).textContent = '');
+  let valid = true;
+
+  if (!id) { document.getElementById('errId').textContent = 'Employee ID is required'; valid = false; }
+  if (!name) { document.getElementById('errName').textContent = 'Employee Name is required'; valid = false; }
+  if (!role || !dept) { toast('Role and Department are required', 'error'); valid = false; }
+  if (!valid) return;
+
+  if (editingEmpId) {
+    // Edit mode
+    const emp = state.employees.find(e => e.id === editingEmpId);
+    if (emp) {
+      // Check duplicate ID only if changed
+      if (id !== editingEmpId && state.employees.some(e => e.id === id)) {
+        document.getElementById('errId').textContent = 'Employee ID already exists';
+        return;
+      }
+      // If ID changed, migrate roster keys
+      if (id !== editingEmpId) {
+        const keys = Object.keys(state.roster).filter(k => k.startsWith(editingEmpId + '_'));
+        keys.forEach(k => {
+          const newKey = id + k.slice(editingEmpId.length);
+          state.roster[newKey] = state.roster[k];
+          delete state.roster[k];
+        });
+        emp.id = id;
+      }
+      emp.name = name; emp.role = role; emp.dept = dept;
+    }
+    cancelEdit();
+    toast('Employee updated successfully', 'success');
+  } else {
+    // Add mode
+    if (state.employees.some(e => e.id === id)) {
+      document.getElementById('errId').textContent = 'Employee ID already exists';
+      return;
+    }
+    state.employees.push({ id, name, role, dept });
+    toast('Employee added successfully', 'success');
+  }
+
+  clearEmpForm();
+  saveState();
+  renderEmployeeTable();
+  document.getElementById('empCount').textContent = state.employees.length;
+}
+
+function clearEmpForm() {
+  ['empId','empName','empRole','empDept'].forEach(id => document.getElementById(id).value = '');
+  ['errId','errName'].forEach(id => document.getElementById(id).textContent = '');
+}
+
+function editEmployee(empId) {
+  const emp = state.employees.find(e => e.id === empId);
+  if (!emp) return;
+  editingEmpId = empId;
+  document.getElementById('empId').value = emp.id;
+  document.getElementById('empName').value = emp.name;
+  document.getElementById('empRole').value = emp.role;
+  document.getElementById('empDept').value = emp.dept;
+  document.getElementById('empFormTitle').textContent = '✏️ Edit Employee';
+  document.getElementById('cancelEditBtn').style.display = 'inline-flex';
+  document.getElementById('empId').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function cancelEdit() {
+  editingEmpId = null;
+  clearEmpForm();
+  document.getElementById('empFormTitle').textContent = '➕ Add New Employee';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+}
+
+function deleteEmployee(empId) {
+  showConfirm('Delete Employee', 'Are you sure you want to delete this employee? All their shift data will be removed.', () => {
+    state.employees = state.employees.filter(e => e.id !== empId);
+    // Remove roster entries
+    Object.keys(state.roster).forEach(k => {
+      if (k.startsWith(empId + '_')) delete state.roster[k];
+    });
+    saveState();
+    renderEmployeeTable();
+    document.getElementById('empCount').textContent = state.employees.length;
+    toast('Employee deleted', 'warning');
+  });
+}
+
+function renderEmployeeTable() {
+  const q = document.getElementById('empSearch').value.toLowerCase();
+  const filtered = state.employees.filter(e =>
+    e.name.toLowerCase().includes(q) ||
+    e.id.toLowerCase().includes(q) ||
+    e.role.toLowerCase().includes(q) ||
+    e.dept.toLowerCase().includes(q)
+  );
+  const tbody = document.getElementById('empTbody');
+  document.getElementById('empCount').textContent = state.employees.length;
+
+  if (!filtered.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><div class="big-icon">👥</div><p>No employees found</p></div></td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filtered.map(emp => `
+    <tr>
+      <td>
+        <div class="employee-cell">
+          <div class="avatar" style="background:${getAvatarColor(emp.name)}">${getInitials(emp.name)}</div>
+          <span class="td-name">${emp.name}</span>
+        </div>
+      </td>
+      <td><span class="font-mono" style="font-size:12px;">${emp.id}</span></td>
+      <td>${emp.role}</td>
+      <td><span class="badge" style="background:var(--accent-light);color:var(--accent)">${emp.dept}</span></td>
+      <td>
+        <div class="flex-row">
+          <button class="btn btn-secondary btn-sm" onclick="editEmployee('${emp.id}')">✏️ Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteEmployee('${emp.id}')">🗑</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// ROSTER GRID
+// ═══════════════════════════════════════════════════════
+function renderRosterGrid() {
+  updatePeriodLabels();
+  const wrap = document.getElementById('rosterGridWrap');
+
+  if (!state.employees.length) {
+    wrap.innerHTML = `<div class="empty-state"><div class="big-icon">📅</div><p>No employees yet. Add employees first.</p></div>`;
+    renderLegend();
+    return;
+  }
+
+  const days = getDaysInMonth(state.currentYear, state.currentMonth);
+  const today = new Date();
+  const isCurrentMonth = today.getMonth() === state.currentMonth && today.getFullYear() === state.currentYear;
+
+  // Build day headers
+  let dayHeaders1 = '';
+  let dayHeaders2 = '';
+  for (let d = 1; d <= days; d++) {
+    const date = new Date(state.currentYear, state.currentMonth, d);
+    const dow = date.getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    const isTodayDay = isCurrentMonth && today.getDate() === d;
+    const cls = isTodayDay ? 'today' : (isWeekend ? 'weekend' : '');
+    dayHeaders1 += `<th class="day-header ${cls}">${d}</th>`;
+    dayHeaders2 += `<th class="day-header ${cls}"><div class="day-sub">${DAYS_SHORT[dow]}</div></th>`;
+  }
+
+  // Build employee rows
+  let rows = '';
+  state.employees.forEach((emp, idx) => {
+    let cells = '';
+    let totalWork = 0;
+    for (let d = 1; d <= days; d++) {
+      const shift = getShift(emp.id, d);
+      const date = new Date(state.currentYear, state.currentMonth, d);
+      const dow = date.getDay();
+      const isWeekend = dow === 0 || dow === 6;
+      if (shift) totalWork++;
+
+      const badgeClass = shift ? `shift-badge shift-${shift}` : 'shift-badge shift-empty';
+      cells += `
+        <td class="shift-cell${isWeekend?' weekend-bg':''}" 
+            data-emp="${emp.id}" data-day="${d}"
+            onclick="openShiftPicker('${emp.id}', ${d}, this)"
+            oncontextmenu="openContextMenu(event, '${emp.id}', ${d})">
+          ${shift ? `<div class="${badgeClass}">${shift}</div>` : '<div class="shift-badge shift-empty" style="color:#e2e6f0;">—</div>'}
+        </td>`;
+    }
+
+    // Totals column
+    const totals = getEmpMonthStats(emp.id);
+    rows += `
+      <tr data-emprow="${emp.id}">
+        <td class="col-sticky" style="vertical-align:middle;">
+          <div class="employee-cell" style="padding:6px 10px;">
+            <div class="avatar" style="background:${getAvatarColor(emp.name)};width:26px;height:26px;font-size:10px;">${getInitials(emp.name)}</div>
+            <div>
+              <div class="emp-name-cell" style="padding:0">${emp.name}</div>
+              <div class="emp-dept-cell" style="padding:0">${emp.dept}</div>
+            </div>
+          </div>
+        </td>
+        <td class="col-sticky-2">
+          <div class="emp-id-cell">${emp.id}</div>
+        </td>
+        ${cells}
+        <td class="col-totals-sticky" style="font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--accent);text-align:center;vertical-align:middle;">
+          ${totals.work}<br><span style="font-size:9px;color:var(--text3)">days</span>
+        </td>
+      </tr>`;
+  });
+
+  // Summary rows
+  const summaryRows = buildDailySummaryRows(days);
+
+  const html = `
+    <table class="roster-table">
+      <thead>
+        <tr>
+          <th class="col-sticky day-header" rowspan="2" style="vertical-align:middle;text-align:left;padding:8px 10px;font-size:12px;z-index:7;">
+            Employee
+          </th>
+          <th class="col-sticky-2 day-header" rowspan="2" style="vertical-align:middle;font-size:10px;z-index:7;">ID</th>
+          ${dayHeaders1}
+          <th class="col-totals-sticky day-header" rowspan="2" style="vertical-align:middle;font-size:10px;z-index:7;">Work<br>Days</th>
+        </tr>
+        <tr>
+          ${dayHeaders2}
+        </tr>
+      </thead>
+      <tbody>
+        ${rows}
+        ${summaryRows}
+      </tbody>
+    </table>`;
+
+  wrap.innerHTML = html;
+  renderLegend();
+}
+
+function buildDailySummaryRows(days) {
+  const labels = [
+    { key:'M', label:'Morning', cls:'shift-M' },
+    { key:'A', label:'Afternoon', cls:'shift-A' },
+    { key:'N', label:'Night', cls:'shift-N' },
+    { key:'G', label:'General', cls:'shift-G' },
+    { key:'leaves', label:'Leaves', cls:'shift-CL' },
+    { key:'WO', label:'Week Off', cls:'shift-WO' },
+  ];
+
+  let headerRow = `<tr class="summary-header"><td class="col-sticky" style="padding:6px 10px;font-size:10px;font-weight:700;color:var(--text3);">Daily Summary</td><td class="col-sticky-2"></td>`;
+  for (let d = 1; d <= days; d++) headerRow += `<td></td>`;
+  headerRow += `<td class="col-totals-sticky"></td></tr>`;
+
+  let rows = headerRow;
+  labels.forEach(({ key, label, cls }) => {
+    let cells = '';
+    let grandTotal = 0;
+    for (let d = 1; d <= days; d++) {
+      let count = 0;
+      state.employees.forEach(emp => {
+        const s = getShift(emp.id, d);
+        if (key === 'leaves') { if (LEAVE_TYPES.includes(s)) count++; }
+        else if (s === key) count++;
+      });
+      grandTotal += count;
+      cells += `<td class="summary-row" style="background:${count?SHIFTS[key==='leaves'?'CL':key].bg:'transparent'};color:${count?SHIFTS[key==='leaves'?'CL':key].text:'var(--text3)'};">${count || ''}</td>`;
+    }
+    rows += `<tr class="summary-row">
+      <td class="col-sticky" style="padding:4px 10px;">
+        <span class="shift-badge ${cls}" style="font-size:9px;">${key === 'leaves' ? 'LV' : key}</span>
+        <span style="font-size:10px;color:var(--text2);margin-left:4px;">${label}</span>
+      </td>
+      <td class="col-sticky-2"></td>
+      ${cells}
+      <td class="col-totals-sticky" style="font-size:11px;font-weight:700;color:var(--accent);">${grandTotal}</td>
+    </tr>`;
+  });
+
+  return rows;
+}
+
+function renderLegend() {
+  const legend = document.getElementById('shiftLegend');
+  if (!legend) return;
+  legend.innerHTML = Object.values(SHIFTS).map(s =>
+    `<div class="legend-item">
+      <div class="legend-dot" style="background:${s.bg};color:${s.text}">${s.code}</div>
+      <span>${s.label}</span>
+    </div>`
+  ).join('');
+}
+
+// ═══════════════════════════════════════════════════════
+// SHIFT PICKER
+// ═══════════════════════════════════════════════════════
+function openShiftPicker(empId, day, cell) {
+  pickerCell = { empId, day };
+  const emp = state.employees.find(e => e.id === empId);
+  const date = new Date(state.currentYear, state.currentMonth, day);
+  const current = getShift(empId, day);
+
+  document.getElementById('shiftPickerInfo').innerHTML =
+    `<strong>${emp?.name}</strong> &mdash; ${day} ${MONTHS[state.currentMonth]} ${state.currentYear} (${DAYS_SHORT[date.getDay()]})` +
+    (current ? ` &mdash; Current: <strong>${SHIFTS[current]?.label}</strong>` : '');
+
+  const grid = document.getElementById('shiftPickerGrid');
+  grid.innerHTML = Object.values(SHIFTS).map(s =>
+    `<div class="shift-option ${s.code} ${current === s.code ? 'selected' : ''}"
+          style="background:${s.bg};color:${s.text};"
+          onclick="applyShift('${s.code}')">
+      ${s.code}<br><span style="font-size:10px;font-weight:400;font-family:'DM Sans',sans-serif;">${s.label}</span>
+    </div>`
+  ).join('');
+
+  openModal('shiftPickerModal');
+}
+
+function applyShift(code) {
+  if (!pickerCell) return;
+  setShift(pickerCell.empId, pickerCell.day, code);
+  closeModal('shiftPickerModal');
+  refreshRosterCell(pickerCell.empId, pickerCell.day);
+  updateRosterTotals();
+  toast(`Shift ${SHIFTS[code].label} assigned`, 'success');
+}
+
+function clearSelectedCell() {
+  if (!pickerCell) return;
+  setShift(pickerCell.empId, pickerCell.day, '');
+  closeModal('shiftPickerModal');
+  refreshRosterCell(pickerCell.empId, pickerCell.day);
+  updateRosterTotals();
+  toast('Shift cleared', 'info');
+}
+
+function refreshRosterCell(empId, day) {
+  const cell = document.querySelector(`td[data-emp="${empId}"][data-day="${day}"]`);
+  if (!cell) return;
+  const shift = getShift(empId, day);
+  cell.innerHTML = shift
+    ? `<div class="shift-badge shift-${shift}">${shift}</div>`
+    : `<div class="shift-badge shift-empty" style="color:#e2e6f0;">—</div>`;
+}
+
+function updateRosterTotals() {
+  // Update totals column for all employees
+  state.employees.forEach(emp => {
+    const row = document.querySelector(`tr[data-emprow="${emp.id}"]`);
+    if (!row) return;
+    const totalCell = row.querySelector('.col-totals-sticky');
+    if (!totalCell) return;
+    const totals = getEmpMonthStats(emp.id);
+    totalCell.innerHTML = `${totals.work}<br><span style="font-size:9px;color:var(--text3)">days</span>`;
+  });
+  // Rebuild summary rows
+  const days = getDaysInMonth(state.currentYear, state.currentMonth);
+  const summaryRows = buildDailySummaryRows(days);
+  // Remove existing summary rows and re-append
+  const tbody = document.querySelector('.roster-table tbody');
+  if (tbody) {
+    const dataRows = Array.from(tbody.querySelectorAll('tr[data-emprow]'));
+    tbody.innerHTML = dataRows.map(r => r.outerHTML).join('') + summaryRows;
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// CONTEXT MENU
+// ═══════════════════════════════════════════════════════
+function openContextMenu(event, empId, day) {
+  event.preventDefault();
+  event.stopPropagation();
+  const menu = document.getElementById('contextMenu');
+  const shift = getShift(empId, day);
+  const emp = state.employees.find(e => e.id === empId);
+
+  menu.innerHTML = `
+    <button onclick="openShiftPicker('${empId}',${day},null);closeContextMenu()">✏️ Assign Shift</button>
+    ${shift ? `<button onclick="setShift('${empId}',${day},'');refreshRosterCell('${empId}',${day});updateRosterTotals();closeContextMenu();toast('Cleared','info')">🗑 Clear Shift</button>` : ''}
+    <hr>
+    ${Object.values(SHIFTS).map(s =>
+      `<button onclick="setShift('${empId}',${day},'${s.code}');refreshRosterCell('${empId}',${day});updateRosterTotals();closeContextMenu();toast('${s.label} assigned','success')" 
+              style="color:${s.text}">
+        <span style="background:${s.bg};padding:1px 5px;border-radius:3px;font-family:'DM Mono',monospace;font-size:11px;">${s.code}</span> ${s.label}
+      </button>`
+    ).join('')}
+  `;
+
+  menu.style.display = 'block';
+  menu.style.left = Math.min(event.clientX, window.innerWidth - 200) + 'px';
+  menu.style.top = Math.min(event.clientY, window.innerHeight - menu.scrollHeight - 10) + 'px';
+}
+
+function closeContextMenu() {
+  document.getElementById('contextMenu').style.display = 'none';
+}
+
+document.addEventListener('click', closeContextMenu);
+
+// ═══════════════════════════════════════════════════════
+// STATS & SUMMARIES
+// ═══════════════════════════════════════════════════════
+function getEmpMonthStats(empId) {
+  const days = getDaysInMonth(state.currentYear, state.currentMonth);
+  const stats = { M:0, A:0, N:0, G:0, WO:0, CL:0, SL:0, PL:0, H:0, leaves:0, work:0 };
+  for (let d = 1; d <= days; d++) {
+    const s = getShift(empId, d);
+    if (s && stats[s] !== undefined) stats[s]++;
+    if (LEAVE_TYPES.includes(s)) stats.leaves++;
+    if (WORK_SHIFTS.includes(s)) stats.work++;
+    if (s === 'G') stats.work++; // counted above via WORK_SHIFTS
+  }
+  // fix double-count: G is in WORK_SHIFTS
+  return stats;
+}
+
+function renderDashboard() {
+  updatePeriodLabels();
+  const days = getDaysInMonth(state.currentYear, state.currentMonth);
+  let totalM=0,totalA=0,totalN=0,totalLeaves=0,totalWO=0;
+  state.employees.forEach(emp => {
+    const s = getEmpMonthStats(emp.id);
+    totalM += s.M; totalA += s.A; totalN += s.N;
+    totalLeaves += s.leaves; totalWO += s.WO;
+  });
+  document.getElementById('stat-emp').textContent = state.employees.length;
+  document.getElementById('stat-morning').textContent = totalM;
+  document.getElementById('stat-afternoon').textContent = totalA;
+  document.getElementById('stat-night').textContent = totalN;
+  document.getElementById('stat-leaves').textContent = totalLeaves;
+  document.getElementById('stat-wo').textContent = totalWO;
+
+  // Daily overview table
+  const thead = document.querySelector('#dailyOverviewTable thead');
+  const tbody = document.querySelector('#dailyOverviewTable tbody');
+  const dayNums = Array.from({length:days},(_,i)=>i+1);
+  thead.innerHTML = `<tr><th style="text-align:left;">Metric</th>${dayNums.map(d=>`<th>${d}<br><span style="font-size:9px;font-weight:400;">${DAYS_SHORT[new Date(state.currentYear,state.currentMonth,d).getDay()]}</span></th>`).join('')}</tr>`;
+
+  const metrics = [
+    { label:'Morning (M)', key:'M', bg:'var(--shift-M-bg)', color:'var(--shift-M-text)' },
+    { label:'Afternoon (A)', key:'A', bg:'var(--shift-A-bg)', color:'var(--shift-A-text)' },
+    { label:'Night (N)', key:'N', bg:'var(--shift-N-bg)', color:'var(--shift-N-text)' },
+    { label:'Week Off (WO)', key:'WO', bg:'var(--shift-WO-bg)', color:'var(--shift-WO-text)' },
+    { label:'Leaves', key:'leaves', bg:'var(--shift-CL-bg)', color:'var(--shift-CL-text)' },
+  ];
+
+  tbody.innerHTML = metrics.map(m => {
+    const cells = dayNums.map(d => {
+      let count = 0;
+      state.employees.forEach(emp => {
+        const s = getShift(emp.id, d);
+        if (m.key === 'leaves') { if(LEAVE_TYPES.includes(s)) count++; }
+        else if (s === m.key) count++;
+      });
+      return `<td style="background:${count ? m.bg : 'transparent'};color:${count ? m.color : 'var(--text3)'};">${count || ''}</td>`;
+    }).join('');
+    return `<tr><td style="font-weight:600;white-space:nowrap;">${m.label}</td>${cells}</tr>`;
+  }).join('');
+}
+
+function renderSummary() {
+  renderEmployeeSummary();
+  renderDailySummary();
+}
+
+function renderEmployeeSummary() {
+  const tbody = document.getElementById('empSummaryBody');
+  const tfoot = document.getElementById('empSummaryFoot');
+  if (!state.employees.length) {
+    tbody.innerHTML = `<tr><td colspan="13"><div class="empty-state"><div class="big-icon">📊</div><p>No data available</p></div></td></tr>`;
+    tfoot.innerHTML = '';
+    return;
+  }
+  const totals = { M:0,A:0,N:0,G:0,WO:0,CL:0,SL:0,PL:0,H:0,leaves:0,work:0 };
+  tbody.innerHTML = state.employees.map(emp => {
+    const s = getEmpMonthStats(emp.id);
+    Object.keys(totals).forEach(k => totals[k] += s[k]);
+    return `<tr>
+      <td><div class="employee-cell">
+        <div class="avatar" style="background:${getAvatarColor(emp.name)};width:24px;height:24px;font-size:9px;">${getInitials(emp.name)}</div>
+        ${emp.name}
+      </div></td>
+      <td class="font-mono" style="font-size:11px;">${emp.id}</td>
+      <td style="color:var(--shift-M-text);font-weight:600;">${s.M||''}</td>
+      <td style="color:var(--shift-A-text);font-weight:600;">${s.A||''}</td>
+      <td style="color:var(--shift-N-text);font-weight:600;">${s.N||''}</td>
+      <td style="color:var(--shift-G-text);font-weight:600;">${s.G||''}</td>
+      <td style="color:var(--shift-WO-text);">${s.WO||''}</td>
+      <td style="color:var(--shift-CL-text);">${s.CL||''}</td>
+      <td style="color:var(--shift-SL-text);">${s.SL||''}</td>
+      <td style="color:var(--shift-PL-text);">${s.PL||''}</td>
+      <td style="color:var(--shift-H-text);">${s.H||''}</td>
+      <td style="font-weight:600;color:#b91c1c;">${s.leaves||''}</td>
+      <td style="font-weight:700;color:var(--accent);">${s.work}</td>
+    </tr>`;
+  }).join('');
+
+  tfoot.innerHTML = `<tr>
+    <td colspan="2">TOTAL</td>
+    <td>${totals.M||''}</td><td>${totals.A||''}</td><td>${totals.N||''}</td><td>${totals.G||''}</td>
+    <td>${totals.WO||''}</td><td>${totals.CL||''}</td><td>${totals.SL||''}</td><td>${totals.PL||''}</td><td>${totals.H||''}</td>
+    <td>${totals.leaves||''}</td><td>${totals.work}</td>
+  </tr>`;
+}
+
+function renderDailySummary() {
+  const tbody = document.getElementById('dailySummaryBody');
+  const tfoot = document.getElementById('dailySummaryFoot');
+  const days = getDaysInMonth(state.currentYear, state.currentMonth);
+  const grandTotals = { M:0,A:0,N:0,G:0,WO:0,leaves:0,H:0,total:0 };
+
+  const rows = [];
+  for (let d = 1; d <= days; d++) {
+    const date = new Date(state.currentYear, state.currentMonth, d);
+    const t = { M:0,A:0,N:0,G:0,WO:0,leaves:0,H:0 };
+    state.employees.forEach(emp => {
+      const s = getShift(emp.id, d);
+      if (s === 'M') t.M++;
+      else if (s === 'A') t.A++;
+      else if (s === 'N') t.N++;
+      else if (s === 'G') t.G++;
+      else if (s === 'WO') t.WO++;
+      else if (s === 'H') t.H++;
+      else if (LEAVE_TYPES.filter(l=>l!=='H').includes(s)) t.leaves++;
+    });
+    const total = t.M+t.A+t.N+t.G+t.WO+t.leaves+t.H;
+    Object.keys(grandTotals).forEach(k => { if(k !== 'total') grandTotals[k] += t[k]; });
+    grandTotals.total += total;
+
+    const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+    rows.push(`<tr style="${isWeekend?'background:#faf5ff;':''}">
+      <td style="font-weight:600;">${d} ${MONTHS[state.currentMonth].slice(0,3)} ${state.currentYear}</td>
+      <td>${DAYS_SHORT[date.getDay()]}</td>
+      <td style="color:var(--shift-M-text);">${t.M||''}</td>
+      <td style="color:var(--shift-A-text);">${t.A||''}</td>
+      <td style="color:var(--shift-N-text);">${t.N||''}</td>
+      <td style="color:var(--shift-G-text);">${t.G||''}</td>
+      <td style="color:var(--shift-WO-text);">${t.WO||''}</td>
+      <td style="color:#b91c1c;">${t.leaves||''}</td>
+      <td style="color:var(--shift-H-text);">${t.H||''}</td>
+      <td style="font-weight:700;color:var(--accent);">${total||''}</td>
+    </tr>`);
+  }
+  tbody.innerHTML = rows.join('');
+  tfoot.innerHTML = `<tr>
+    <td colspan="2">TOTAL</td>
+    <td>${grandTotals.M||''}</td><td>${grandTotals.A||''}</td><td>${grandTotals.N||''}</td>
+    <td>${grandTotals.G||''}</td><td>${grandTotals.WO||''}</td>
+    <td>${grandTotals.leaves||''}</td><td>${grandTotals.H||''}</td>
+    <td>${grandTotals.total}</td>
+  </tr>`;
+}
+
+function switchSummaryTab(name) {
+  document.querySelectorAll('#page-summary .tab-btn').forEach((b,i) => {
+    b.classList.toggle('active', (i===0 && name==='employee') || (i===1 && name==='daily'));
+  });
+  document.getElementById('summary-employee').classList.toggle('active', name==='employee');
+  document.getElementById('summary-daily').classList.toggle('active', name==='daily');
+  if (name === 'employee') renderEmployeeSummary();
+  if (name === 'daily') renderDailySummary();
+}
+
+// ═══════════════════════════════════════════════════════
+// SMART TOOLS
+// ═══════════════════════════════════════════════════════
+function openAutoAssign() {
+  const sel = document.getElementById('autoEmpSelect');
+  sel.innerHTML = state.employees.map(e => `<option value="${e.id}">${e.name} (${e.id})</option>`).join('');
+  openModal('autoAssignModal');
+}
+
+function runAutoAssign() {
+  const sel = document.getElementById('autoEmpSelect');
+  const selected = Array.from(sel.selectedOptions).map(o => o.value);
+  const emps = selected.length ? state.employees.filter(e => selected.includes(e.id)) : state.employees;
+  const defaultShift = document.getElementById('autoDefaultShift').value;
+  const sunOff = document.getElementById('autoSunOff').checked;
+  const sat2Off = document.getElementById('autoSat2Off').checked;
+  const sat4Off = document.getElementById('autoSat4Off').checked;
+  const overwrite = document.getElementById('autoOverwrite').checked;
+  const days = getDaysInMonth(state.currentYear, state.currentMonth);
+
+  let count = 0;
+  emps.forEach(emp => {
+    let satCount = 0;
+    for (let d = 1; d <= days; d++) {
+      const date = new Date(state.currentYear, state.currentMonth, d);
+      const dow = date.getDay();
+      const existing = getShift(emp.id, d);
+      if (existing && !overwrite) continue;
+
+      let assignShift = null;
+      if (dow === 0 && sunOff) assignShift = 'WO';
+      else if (dow === 6) {
+        satCount++;
+        if ((sat2Off && satCount === 2) || (sat4Off && satCount === 4)) assignShift = 'WO';
+        else assignShift = defaultShift;
+      } else {
+        assignShift = defaultShift;
+      }
+      if (assignShift) { setShift(emp.id, d, assignShift); count++; }
+    }
+  });
+
+  saveState();
+  closeModal('autoAssignModal');
+  if (document.getElementById('page-roster').classList.contains('active')) renderRosterGrid();
+  toast(`Auto-assigned ${count} shifts across ${emps.length} employees`, 'success');
+}
+
+function openBulkAssign() {
+  const sel = document.getElementById('bulkEmpSelect');
+  sel.innerHTML = `<option value="all">All Employees</option>` +
+    state.employees.map(e => `<option value="${e.id}">${e.name} (${e.id})</option>`).join('');
+  const days = getDaysInMonth(state.currentYear, state.currentMonth);
+  document.getElementById('bulkFrom').value = 1;
+  document.getElementById('bulkTo').value = days;
+  openModal('bulkAssignModal');
+}
+
+function runBulkAssign() {
+  const from = parseInt(document.getElementById('bulkFrom').value);
+  const to = parseInt(document.getElementById('bulkTo').value);
+  const shift = document.getElementById('bulkShift').value;
+  const empSel = document.getElementById('bulkEmpSelect').value;
+  const days = getDaysInMonth(state.currentYear, state.currentMonth);
+
+  if (!from || !to || from > to || from < 1 || to > days) {
+    toast('Invalid date range', 'error'); return;
+  }
+
+  const checkedDays = Array.from(document.querySelectorAll('#bulkDaysCheck input:checked')).map(c => parseInt(c.value));
+  const emps = empSel === 'all' ? state.employees : state.employees.filter(e => e.id === empSel);
+  let count = 0;
+  emps.forEach(emp => {
+    for (let d = from; d <= to; d++) {
+      const dow = new Date(state.currentYear, state.currentMonth, d).getDay();
+      if (checkedDays.length && !checkedDays.includes(dow)) continue;
+      setShift(emp.id, d, shift);
+      count++;
+    }
+  });
+  saveState();
+  closeModal('bulkAssignModal');
+  if (document.getElementById('page-roster').classList.contains('active')) renderRosterGrid();
+  toast(`Bulk assigned ${count} shifts`, 'success');
+}
+
+function openCopyShifts() {
+  if (state.employees.length < 2) { toast('Need at least 2 employees', 'warning'); return; }
+  const opts = state.employees.map(e => `<option value="${e.id}">${e.name} (${e.id})</option>`).join('');
+  document.getElementById('copyFromEmp').innerHTML = opts;
+  document.getElementById('copyToEmp').innerHTML = opts;
+  openModal('copyShiftsModal');
+}
+
+function runCopyShifts() {
+  const fromId = document.getElementById('copyFromEmp').value;
+  const toId = document.getElementById('copyToEmp').value;
+  const overwrite = document.getElementById('copyOverwrite').checked;
+  if (fromId === toId) { toast('Source and destination must differ', 'error'); return; }
+  const days = getDaysInMonth(state.currentYear, state.currentMonth);
+  let count = 0;
+  for (let d = 1; d <= days; d++) {
+    const s = getShift(fromId, d);
+    if (!s) continue;
+    if (!overwrite && getShift(toId, d)) continue;
+    setShift(toId, d, s);
+    count++;
+  }
+  saveState();
+  closeModal('copyShiftsModal');
+  if (document.getElementById('page-roster').classList.contains('active')) renderRosterGrid();
+  toast(`Copied ${count} shifts`, 'success');
+}
+
+function copyPrevWeek() {
+  if (!state.employees.length) { toast('No employees', 'warning'); return; }
+  const today = new Date();
+  const currentDow = today.getDay();
+  const weekStart = today.getDate() - currentDow + 1; // Monday
+  const prevWeekStart = weekStart - 7;
+  const days = getDaysInMonth(state.currentYear, state.currentMonth);
+  let count = 0;
+  state.employees.forEach(emp => {
+    for (let i = 0; i < 7; i++) {
+      const prevDay = prevWeekStart + i;
+      const curDay = weekStart + i;
+      if (prevDay < 1 || curDay > days || prevDay > days) continue;
+      const s = getShift(emp.id, prevDay);
+      if (s) { setShift(emp.id, curDay, s); count++; }
+    }
+  });
+  saveState();
+  if (document.getElementById('page-roster').classList.contains('active')) renderRosterGrid();
+  toast(`Copied ${count} shifts from previous week`, 'success');
+}
+
+function openBulkLeave() {
+  const sel = document.getElementById('leaveEmpSelect');
+  sel.innerHTML = `<option value="all">All Employees</option>` +
+    state.employees.map(e => `<option value="${e.id}">${e.name} (${e.id})</option>`).join('');
+  openModal('bulkLeaveModal');
+}
+
+function runBulkLeave() {
+  const from = parseInt(document.getElementById('leaveFrom').value);
+  const to = parseInt(document.getElementById('leaveTo').value);
+  const leaveType = document.getElementById('leaveType').value;
+  const empSel = document.getElementById('leaveEmpSelect').value;
+  const days = getDaysInMonth(state.currentYear, state.currentMonth);
+  if (!from || !to || from > to || from < 1 || to > days) { toast('Invalid date range', 'error'); return; }
+  const emps = empSel === 'all' ? state.employees : state.employees.filter(e => e.id === empSel);
+  let count = 0;
+  emps.forEach(emp => {
+    for (let d = from; d <= to; d++) { setShift(emp.id, d, leaveType); count++; }
+  });
+  saveState();
+  closeModal('bulkLeaveModal');
+  if (document.getElementById('page-roster').classList.contains('active')) renderRosterGrid();
+  toast(`Applied ${leaveType} leave for ${count} cells`, 'success');
+}
+
+// ═══════════════════════════════════════════════════════
+// EXCEL EXPORT/IMPORT
+// ═══════════════════════════════════════════════════════
+function exportExcel() {
+  if (!state.employees.length) { toast('No employees to export', 'warning'); return; }
+  showLoading(true);
+  setTimeout(() => {
+    try {
+      const wb = XLSX.utils.book_new();
+      const days = getDaysInMonth(state.currentYear, state.currentMonth);
+      const monthLabel = `${MONTHS[state.currentMonth]} ${state.currentYear}`;
+
+      // ── Sheet 1: Roster ──
+      const rosterHeaders = ['Employee Name', 'Employee ID', 'Department', 'Role'];
+      for (let d = 1; d <= days; d++) {
+        const date = new Date(state.currentYear, state.currentMonth, d);
+        rosterHeaders.push(`${d}-${DAYS_SHORT[date.getDay()]}`);
+      }
+      rosterHeaders.push('Working Days', 'Total Leaves', 'Week Off');
+
+      const rosterRows = [rosterHeaders];
+      state.employees.forEach(emp => {
+        const row = [emp.name, emp.id, emp.dept, emp.role];
+        for (let d = 1; d <= days; d++) row.push(getShift(emp.id, d) || '');
+        const s = getEmpMonthStats(emp.id);
+        row.push(s.work, s.leaves, s.WO);
+        rosterRows.push(row);
+      });
+
+      // Summary rows
+      rosterRows.push([]);
+      const summaryHeader = ['Daily Summary', '','',''];
+      for (let d = 1; d <= days; d++) summaryHeader.push(d);
+      rosterRows.push(summaryHeader);
+
+      ['M','A','N','G','WO','leaves'].forEach(key => {
+        const label = key === 'leaves' ? 'Total Leaves' : SHIFTS[key]?.label || key;
+        const row = [label,'','',''];
+        for (let d = 1; d <= days; d++) {
+          let count = 0;
+          state.employees.forEach(emp => {
+            const s = getShift(emp.id, d);
+            if (key === 'leaves') { if(LEAVE_TYPES.includes(s)) count++; }
+            else if (s === key) count++;
+          });
+          row.push(count || '');
+        }
+        rosterRows.push(row);
+      });
+
+      const ws1 = XLSX.utils.aoa_to_sheet(rosterRows);
+      XLSX.utils.book_append_sheet(wb, ws1, `Roster - ${monthLabel}`);
+
+      // ── Sheet 2: Employee Summary ──
+      const empSumHeaders = ['Employee', 'ID', 'Morning', 'Afternoon', 'Night', 'General', 'Week Off', 'CL', 'SL', 'PL', 'Holiday', 'Total Leaves', 'Working Days'];
+      const empSumRows = [empSumHeaders];
+      state.employees.forEach(emp => {
+        const s = getEmpMonthStats(emp.id);
+        empSumRows.push([emp.name, emp.id, s.M, s.A, s.N, s.G, s.WO, s.CL, s.SL, s.PL, s.H, s.leaves, s.work]);
+      });
+      const ws2 = XLSX.utils.aoa_to_sheet(empSumRows);
+      XLSX.utils.book_append_sheet(wb, ws2, 'Employee Summary');
+
+      // ── Sheet 3: Daily Summary ──
+      const dailySumHeaders = ['Date', 'Day', 'Morning', 'Afternoon', 'Night', 'General', 'Week Off', 'Leaves', 'Holiday', 'Total'];
+      const dailySumRows = [dailySumHeaders];
+      for (let d = 1; d <= days; d++) {
+        const date = new Date(state.currentYear, state.currentMonth, d);
+        const t = { M:0,A:0,N:0,G:0,WO:0,leaves:0,H:0 };
+        state.employees.forEach(emp => {
+          const s = getShift(emp.id, d);
+          if (s === 'M') t.M++;
+          else if (s === 'A') t.A++;
+          else if (s === 'N') t.N++;
+          else if (s === 'G') t.G++;
+          else if (s === 'WO') t.WO++;
+          else if (s === 'H') t.H++;
+          else if (LEAVE_TYPES.filter(l=>l!=='H').includes(s)) t.leaves++;
+        });
+        dailySumRows.push([`${d} ${MONTHS[state.currentMonth].slice(0,3)}`, DAYS_SHORT[date.getDay()], t.M, t.A, t.N, t.G, t.WO, t.leaves, t.H, t.M+t.A+t.N+t.G+t.WO+t.leaves+t.H]);
+      }
+      const ws3 = XLSX.utils.aoa_to_sheet(dailySumRows);
+      XLSX.utils.book_append_sheet(wb, ws3, 'Daily Summary');
+
+      XLSX.writeFile(wb, `ShiftFlow_Roster_${MONTHS[state.currentMonth]}_${state.currentYear}.xlsx`);
+      toast('Excel exported successfully!', 'success');
+    } catch (e) {
+      toast('Export failed: ' + e.message, 'error');
+    } finally {
+      showLoading(false);
+    }
+  }, 100);
+}
+
+function exportSummary(type) {
+  if (type === 'employee') {
+    // Export just employee summary sheet
+    const wb = XLSX.utils.book_new();
+    const headers = ['Employee','ID','Morning','Afternoon','Night','General','Week Off','CL','SL','PL','Holiday','Total Leaves','Working Days'];
+    const rows = [headers];
+    state.employees.forEach(emp => {
+      const s = getEmpMonthStats(emp.id);
+      rows.push([emp.name,emp.id,s.M,s.A,s.N,s.G,s.WO,s.CL,s.SL,s.PL,s.H,s.leaves,s.work]);
+    });
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, 'Employee Summary');
+    XLSX.writeFile(wb, `ShiftFlow_EmpSummary_${MONTHS[state.currentMonth]}_${state.currentYear}.xlsx`);
+    toast('Employee summary exported!', 'success');
+  } else {
+    exportExcel();
+  }
+}
+
+function importExcel(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  showLoading(true);
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 });
+
+      if (rows.length < 2) { toast('Empty or invalid file', 'error'); return; }
+
+      const header = rows[0];
+      // Detect day columns (columns after 'Role')
+      const nameIdx = header.indexOf('Employee Name');
+      const idIdx = header.indexOf('Employee ID');
+      const deptIdx = header.indexOf('Department');
+      const roleIdx = header.indexOf('Role');
+
+      if (nameIdx < 0 || idIdx < 0) { toast('Invalid roster format. Ensure columns: Employee Name, Employee ID', 'error'); return; }
+
+      let importedEmps = 0, importedShifts = 0;
+
+      for (let r = 1; r < rows.length; r++) {
+        const row = rows[r];
+        if (!row[nameIdx] || !row[idIdx]) continue;
+        if (row[nameIdx] === 'Daily Summary') break;
+
+        const empId = String(row[idIdx]).trim();
+        const empName = String(row[nameIdx]).trim();
+        const dept = deptIdx >= 0 ? String(row[deptIdx] || '').trim() : '';
+        const role = roleIdx >= 0 ? String(row[roleIdx] || '').trim() : '';
+
+        if (!state.employees.some(e => e.id === empId)) {
+          state.employees.push({ id: empId, name: empName, dept, role });
+          importedEmps++;
+        }
+
+        // Import shifts
+        for (let c = roleIdx + 1; c < header.length; c++) {
+          const colHeader = String(header[c] || '');
+          const dayMatch = colHeader.match(/^(\d+)-/);
+          if (!dayMatch) continue;
+          const day = parseInt(dayMatch[1]);
+          const shift = String(row[c] || '').trim().toUpperCase();
+          if (SHIFTS[shift]) { setShift(empId, day, shift); importedShifts++; }
+        }
+      }
+
+      saveState();
+      renderEmployeeTable();
+      if (document.getElementById('page-roster').classList.contains('active')) renderRosterGrid();
+      toast(`Imported ${importedEmps} employees, ${importedShifts} shifts`, 'success');
+    } catch (err) {
+      toast('Import failed: ' + err.message, 'error');
+    } finally {
+      showLoading(false);
+      event.target.value = '';
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ═══════════════════════════════════════════════════════
+// MODAL UTILITIES
+// ═══════════════════════════════════════════════════════
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+function showConfirm(title, msg, onOk) {
+  document.getElementById('confirmTitle').textContent = title;
+  document.getElementById('confirmMsg').textContent = msg;
+  const btn = document.getElementById('confirmOkBtn');
+  btn.onclick = () => { onOk(); closeModal('confirmModal'); };
+  openModal('confirmModal');
+}
+
+function confirmClearAll() {
+  showConfirm('Clear All Data', 'This will permanently delete all employees and roster data. Are you sure?', () => {
+    localStorage.clear();
+    state.employees = [];
+    state.roster = {};
+    renderEmployeeTable();
+    if (document.getElementById('page-roster').classList.contains('active')) renderRosterGrid();
+    renderDashboard();
+    toast('All data cleared', 'warning');
+  });
+}
+
+function confirmClearRoster() {
+  showConfirm('Clear Roster', 'This will clear all shift assignments for the current month. Employee data will remain.', () => {
+    const days = getDaysInMonth(state.currentYear, state.currentMonth);
+    state.employees.forEach(emp => {
+      for (let d = 1; d <= days; d++) setShift(emp.id, d, '');
+    });
+    saveState();
+    renderRosterGrid();
+    toast('Roster cleared for current month', 'warning');
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════════════
+function toast(msg, type = 'info') {
+  const icons = { success: '✅', error: '❌', warning: '⚠️', info: 'ℹ️' };
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.innerHTML = `<span>${icons[type]||'ℹ️'}</span> ${msg}`;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity 0.3s'; setTimeout(() => el.remove(), 350); }, 2800);
+}
+
+function showLoading(show) {
+  document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+}
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+function init() {
+  loadState();
+  initPeriodSelectors();
+  updatePeriodLabels();
+  renderEmployeeTable();
+  renderDashboard();
+  document.getElementById('empCount').textContent = state.employees.length;
+}
+
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
